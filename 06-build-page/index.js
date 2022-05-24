@@ -9,7 +9,7 @@ fs.mkdir(path.join(__dirname, 'project-dist'), {recursive : true}, (err) => {
 });
 
 // create writer
-let writer = fs.createWriteStream(path.join(__dirname, 'project-dist', 'index.html'));
+// let writer = fs.createWriteStream(path.join(__dirname, 'project-dist', 'index.html'));
 
 // read template.html file
 fs.readFile(path.join(__dirname, 'template.html'), (err, data) => {
@@ -28,77 +28,93 @@ fs.readFile(path.join(__dirname, 'template.html'), (err, data) => {
     });
     return;
   }
-
-  // get all tags
-  let arr = data.toString().replace(/\r\n/g,'\n').split('\n');
-
-  // tags before {{header}}
-  let a = '';
-  // tags after {{header}}, before {{articles}}
-  let b = '';
-  // tags after {{articles}}, before {{footer}}
-  let c = '';
-  // tags after {{footer}}
-  let d = '';
-
-  let count = 0;
-
-  // get tags before {{header}}
-  while (count < arr.length) {
-    if (arr[count].trim() === '{{header}}') {
-      count++;
-      break;
-    }
-    a += arr[count] + '\n';
-    count++;
-  }
-
-  // get tags after {{header}}, before {{articles}}
-  while (count < arr.length) {
-    if (arr[count].trim() === '{{articles}}') {
-      count++;
-      break;
-    }
-    b += arr[count] + '\n';
-    count++;
-  }
-
-  // get tags after {{articles}}, before {{footer}}
-  while (count < arr.length) {
-    if (arr[count].trim() === '{{footer}}') {
-      count++;
-      break;
-    }
-    c += arr[count] + '\n';
-    count++;
-  }
-
-  // tags after {{footer}}
-  while (count < arr.length) {
-    // console.log(arr[count]);
-    d += arr[count] + '\n';
-    count++;
-  }
-
-  // write tags into index.html file
-  writer.write(a);
-  fs.readFile(path.join(__dirname, 'components', 'header.html'), (err, data) => {
+  
+  let html = data.toString();
+  fs.readdir(path.join(__dirname, 'components'), {withFileTypes : true}, (err, files) => {
     if (err) throw err;
-    writer.write(data + '\n');
-    writer.write(b);
-
-    fs.readFile(path.join(__dirname, 'components', 'articles.html'), (err, data) => {
-      if (err) throw err;
-      writer.write(data + '\n');
-      writer.write(c);
-
-      fs.readFile(path.join(__dirname, 'components', 'footer.html'), (err, data) => {
-        if (err) throw err;
-        writer.write(data + '\n');
-        writer.write(d);
-      });
-    });
+    for (let file of files) {
+      if (html.includes('{{' + file.name.split('.')[0] + '}}')) {
+        fs.readFile(path.join(__dirname, 'components', file.name), (err, data) => {
+          if (err) throw err;
+          html = html.replace('{{' + file.name.split('.')[0] + '}}', data.toString());
+          fs.writeFile(path.join(__dirname, 'project-dist', 'index.html'), html, err1 => {
+            if (err1) throw err1;
+          });
+        });
+      }
+    }
   });
+
+  // // get all tags
+  // let arr = data.toString().replace(/\r\n/g,'\n').split('\n');
+  //
+  // // tags before {{header}}
+  // let a = '';
+  // // tags after {{header}}, before {{articles}}
+  // let b = '';
+  // // tags after {{articles}}, before {{footer}}
+  // let c = '';
+  // // tags after {{footer}}
+  // let d = '';
+  //
+  // let count = 0;
+  //
+  // // get tags before {{header}}
+  // while (count < arr.length) {
+  //   if (arr[count].trim() === '{{header}}') {
+  //     count++;
+  //     break;
+  //   }
+  //   a += arr[count] + '\n';
+  //   count++;
+  // }
+  //
+  // // get tags after {{header}}, before {{articles}}
+  // while (count < arr.length) {
+  //   if (arr[count].trim() === '{{articles}}') {
+  //     count++;
+  //     break;
+  //   }
+  //   b += arr[count] + '\n';
+  //   count++;
+  // }
+  //
+  // // get tags after {{articles}}, before {{footer}}
+  // while (count < arr.length) {
+  //   if (arr[count].trim() === '{{footer}}') {
+  //     count++;
+  //     break;
+  //   }
+  //   c += arr[count] + '\n';
+  //   count++;
+  // }
+  //
+  // // tags after {{footer}}
+  // while (count < arr.length) {
+  //   // console.log(arr[count]);
+  //   d += arr[count] + '\n';
+  //   count++;
+  // }
+  //
+  // // write tags into index.html file
+  // writer.write(a);
+  // fs.readFile(path.join(__dirname, 'components', 'header.html'), (err, data) => {
+  //   if (err) throw err;
+  //   writer.write(data + '\n');
+  //   writer.write(b);
+  //
+  //   fs.readFile(path.join(__dirname, 'components', 'articles.html'), (err, data) => {
+  //     if (err) throw err;
+  //     writer.write(data + '\n');
+  //     writer.write(c);
+  //
+  //     fs.readFile(path.join(__dirname, 'components', 'footer.html'), (err, data) => {
+  //       if (err) throw err;
+  //       writer.write(data + '\n');
+  //       writer.write(d);
+  //     });
+  //   });
+  // });
 });
 
 
