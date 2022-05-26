@@ -1,29 +1,42 @@
 const path = require('path');
 const fs = require('fs/promises');
 
-// files path
-let files = path.join(__dirname, 'files');
-
 // files-copy path
 let filesCopy = path.join(__dirname, 'files-copy');
 
 // create files-copy directory
 fs.mkdir(filesCopy, {recursive : true}).then();
 
-// delete all files inside files-copy directory
-fs.readdir(filesCopy, {withFileTypes : true}).then(value => {
-  for (let file of value) {
-    fs.unlink(path.join(filesCopy, file.name)).then();
-  }
-});
+
+function removeDir(copyFilesPath) {
+  fs.readdir(copyFilesPath, {withFileTypes : true}).then(value => {
+    for (let file of value) {
+      if (file.isDirectory()) {
+        removeDir(path.join(copyFilesPath, file.name));
+      } else {
+        fs.unlink(path.join(copyFilesPath, file.name)).then();
+      }
+    }
+  });
+}
+
+removeDir(filesCopy);
 
 // copy files from files dir to files-copy dir
-fs.readdir(files, {withFileTypes : true}).then(value => {
-  for (let file of value) {
-    let filePath = path.join(__dirname, 'files',file.name);
-    let fileCopyPath = path.join(__dirname, 'files-copy', file.name);
-    fs.copyFile(filePath, fileCopyPath).catch(reason => {
-      throw reason;
-    });
-  }
-});
+function copyFiles(filesPath, copyFilesPath) {
+  fs.readdir(filesPath, {withFileTypes : true}).then(value => {
+    for (let file of value) {
+
+      if (file.isDirectory()) {
+        fs.mkdir(path.join(filesCopy, file.name), {recursive : true}).then();
+        copyFiles(path.join(filesPath, file.name), path.join(copyFilesPath, file.name));
+      } else {
+        fs.copyFile(path.join(filesPath, file.name), path.join(copyFilesPath, file.name)).catch((reason) => {
+          throw reason;
+        });
+      }
+    }
+  });
+}
+
+copyFiles(path.join(__dirname, 'files'), path.join(__dirname, 'files-copy'));
